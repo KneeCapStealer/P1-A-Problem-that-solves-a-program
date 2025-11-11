@@ -2,4 +2,8 @@
 
 int main() {
     printf("Hello, World!");
+
+printf("Cooler");
+
 }
+
