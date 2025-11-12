@@ -3,12 +3,13 @@ project(wildire-spotting C)
 
 set(CMAKE_C_STANDARD 17)
 
-# Source files
-file(GLOB_RECURSE SOURCES
-    RELATIVE ${PROJECT_SOURCE_DIR}
-    src/*.c
+add_executable(wildfire-spotting
+    src/main.c
+    src/direct_spread.c
+    src/spotting_spread.c
+    src/display.c
+    src/input.c
+    src/burnout_cell.c
 )
-
-add_executable(wildfire-spotting ${SOURCES})
 
 install(TARGETS wildfire-spotting DESTINATION bin)
