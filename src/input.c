@@ -1,6 +1,7 @@
 #include "input.h"
 #include "cell.h"
 #include "string.h"
+#include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,7 +11,28 @@ char* findChar(char c);
 /// Parse an integer, this function looks a max of 11 bytes ahead
 /// The maximum integer number is 10 digits, and a possible negation sign also takes 1 digit.
 /// @return Returns the number of bytes read
-uint8_t parseNumber(const char* buf, size_t max_len, int* out);
+uint8_t parseNumber(const char* buf, size_t max_len, int* out) {
+    // Local buffer to store the number in
+    char num_str[12];
+
+    // Our pointer that looks forward through the `buf` for number characters
+    const char* ptr = buf;
+    for (; ptr < buf + max_len && isdigit(*ptr); ptr++) {
+        // If we have looked further than the size of our `num_str` then we exit the loop
+        const uint8_t i = ptr - buf;
+        if (i >= sizeof(num_str)) break;
+
+        num_str[i] = *ptr;
+    }
+    // A number has been loaded succesfully into the num_str. Now we "null terminate" the string
+    // We do this by adding a 0 at the end of the string:
+    const uint8_t i = ptr - buf;
+    num_str[i] = '\0';
+
+    // Now we use `atoi` to convert it to an integer:
+    *out = atoi(num_str);
+    return i; // i = number of bytes parsed to an integer
+}
 
 typedef enum ParseState {
     PARSE_STATE_HEADER_VALUE,
@@ -66,6 +88,11 @@ parse_next:
                 size_t bytes_left = buf_size - buf_pos;
                 uint8_t bytes_parsed = parseNumber(buf + buf_pos, bytes_left, header_addresses[header_index]);
 
+                if (bytes_parsed == 0) {
+                    printf("ERROR: failed parsing number");
+                    goto _err;
+                }
+
                 // We reached the end of the buffer, the number might be incomplete
                 if (buf_pos + bytes_parsed >= buf_size) {
                     // We have reached the end of the file without completing the headers, this is an invalid file
@@ -84,10 +111,10 @@ parse_next:
 
 
                 // Are there more headers?
-                if (++header_index < sizeof(header_addresses)) {
+                if (++header_index < sizeof(header_addresses) / sizeof(header_addresses[0])) {
                     // Since there are more headers, we need a ',' to seperate the values
                     if (buf[buf_pos] != ',') {
-                        printf("ERROR: invalid char while parsing input headers: %c", buf[buf_pos]);
+                        printf("ERROR: invalid char while parsing input headers: '%c'\nError at header number: %d", buf[buf_pos], header_index);
                         goto _err;
                     }
 
@@ -158,12 +185,13 @@ parse_next:
             // END OF PARSE_STATE_SETUP_AUTOMATON
 
             case PARSE_STATE_CELLS:
-
                 break;
         }
 
     } while(!feof(fd) || ferror(fd));
 
+    // Succesfully parsed input
+    return automaton;
 
 _err:
     if (fd) fclose(fd);
