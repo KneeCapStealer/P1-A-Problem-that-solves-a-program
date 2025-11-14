@@ -146,7 +146,7 @@ parse_next:
                 // No more headers, require newline at the end of header section:
                 char header_end = buf[buf_pos];
                 if (header_end != '\n' && header_end != '\r') {
-                    fprintf(stderr, "ERROR: missing newline at the end of header section");
+                    fprintf(stderr, "ERROR: missing newline at the end of header section\n");
                     goto _err;
                 }
 
