@@ -1,4 +1,5 @@
 #include "cell.h"
+#include <stdio.h>
 
 const char* cellTypeToStr(CellType type) {
     switch (type) {

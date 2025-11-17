@@ -43,19 +43,11 @@ static size_t parseNumberValues(const char* buf, int* const * addresses, size_t 
 }
 
 CellularAutomaton readInitialState(const char* path) {
-    CellularAutomaton automaton = {
-        .rows = nullptr,
-        .num_rows = 0,
-        .windX = 0,
-        .windY = 0
-    };
-
     FILE* fd = fopen(path, "r");
     if (!fd) {
         fprintf(stderr, "Failed to open file: %s\n", path);
         goto err_close_file;
     } 
-
 
     int width;
     int height;
@@ -94,7 +86,6 @@ CellularAutomaton readInitialState(const char* path) {
     case '\n':
         idx++;
         break;
-
     
     // Shouldn't happen lol
     default:
@@ -112,18 +103,14 @@ CellularAutomaton readInitialState(const char* path) {
     }
 
     // Correctly typed versions
-    size_t h = (size_t)height;
-    size_t w = (size_t)width;
-
-    automaton.num_rows = h;
-    automaton.rows = malloc(sizeof(CellArray*) * h);
-    if (!automaton.rows) {
+    const size_t h = (size_t)height;
+    const size_t w = (size_t)width;
+    CellArray* cell_arrays = malloc(sizeof(CellArray) * h);
+    if (!cell_arrays) {
         fprintf(stderr, "Out Of Memory\n");
         fclose(fd);
         exit(EXIT_FAILURE);
     }
-    automaton.windY = (float)windY / 100.f;
-    automaton.windX = (float)windX / 100.f;
 
     // Allocate memory for the cells
     Cell* cells = malloc(sizeof(Cell) * h * w);
@@ -135,16 +122,29 @@ CellularAutomaton readInitialState(const char* path) {
 
     // Distribute cell memory among the CellArrays
     for (size_t i = 0; i < h; i++) {
-        automaton.rows[i] = (CellArray){
+        cell_arrays[i] = (CellArray){
             .count = w,
             .elements = cells + (i * w),
         };
     }
 
+    const CellularAutomaton automaton = {
+        .num_rows = h,
+        .rows = cell_arrays,
+        .windY = (float)windY / 100.f,
+        .windX = (float)windX / 100.f,
+    };
+
+
     // Parse the cells
     char line[128];
     size_t cell_num = 0;
     for (; fgets(line, sizeof(line), fd); cell_num++) {
+        if (cell_num >= w * h) {
+            fprintf(stderr, "Cell number exceeded number allocated: %zu\n", cell_num); 
+            goto err_close_file;
+        }
+
         uint8_t idx = 0;
         const uint8_t line_len = (uint8_t)strlen(line);
         // Line too long
