@@ -65,5 +65,5 @@ static void printCellProc(const CellularAutomaton* automaton, size_t row, size_t
 }
 
 void printAutomaton(const CellularAutomaton* automaton, FILE *fd) {
-    forEachCell(automaton, printCellProc, (void*)fd);
+    forEachCell(automaton, printCellProc, fd);
 }
