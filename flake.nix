@@ -18,6 +18,7 @@
         packages = with pkgs; [
           cmake
           ninja
+          llvmPackages_latest.lld
         ];
       };
     };
