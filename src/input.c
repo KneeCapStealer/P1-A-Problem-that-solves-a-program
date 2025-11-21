@@ -16,13 +16,16 @@ static size_t parseNumber(const char* buf, int* out) {
     return (size_t)(end_of_num_ptr - buf); // number of bytes parsed to an integer
 }
 
+/// Used for reading numbers from the input files like so: num1,num2,...,num<num_addresses>
+/// The numbers are outputtet to the variables pointet to by `addresses`.
 static size_t parseNumberValues(const char* buf, int* const * addresses, size_t num_addresses) {
     size_t idx = 0;
     for (uint8_t value_index = 0; value_index < num_addresses; value_index++) {
         int* value = addresses[value_index];
+        // Read a number into the value
         const size_t numdigits = parseNumber(buf + idx, value);
 
-        // Failed reading value
+        // If number of digits read is 0, then there was an error
         if (numdigits == 0) {
             fprintf(stderr, "ERROR: couldn't parse value number: %hhu\n", value_index + 1);
             return 0;
@@ -49,6 +52,7 @@ CellularAutomaton readInitialState(const char* path) {
         goto err_close_file;
     } 
 
+    // Headers
     int width;
     int height;
     int windX;
@@ -74,25 +78,7 @@ CellularAutomaton readInitialState(const char* path) {
         goto err_close_file;
     }
     idx += bytes_read;
-
-    // Handle newline
-    switch (header_line[idx]) {
-    // Windows moment
-    case '\r':
-        idx += 2;
-        break;
-
-    // Unix newline
-    case '\n':
-        idx++;
-        break;
     
-    // Shouldn't happen lol
-    default:
-        fputs("ERROR: missing new line at the end of header section", stderr);
-        goto err_close_file;
-    }
-
     if (height < 0) {
         fputs("ERROR: Header value \"height\" has a negative value\n", stderr);
         goto err_close_file;
