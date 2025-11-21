@@ -250,6 +250,8 @@ CellularAutomaton readInitialState(const char* path) {
     if (!feof(fd))
         goto err_failed_read;
 
+    fclose(fd);
+
     return automaton;
 
 // ez pz error handling in c
